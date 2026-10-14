@@ -1,0 +1,188 @@
+// Deep Night, the Minecraft side: every half second, work out how dark it is for each player, how far their own
+// lights let them see, and ask the shared fog mixer (kit/fog-mixer.js) for that much fog. Also plays the sounds of
+// the night around them. All the numbers come from night-logic.js, which is tested; this file is only glue and has
+// not been run in a game yet (see DESIGN.md for what to check first).
+import { system, world } from "@minecraft/server";
+import { clearFog, setFog, startFogMixer } from "./kit/fog-mixer.js";
+import { lightOf } from "./kit/luminance.js";
+import { darknessAt, easeDistance, nextCue, seeingDistance, visibleDistance } from "./night-logic.js";
+
+export const PACK_ID = "deep-night-f2a93cb9";
+const INTERVAL = 10; // ticks between updates
+const LAYER = "night";
+const MODE_KEY = "dn:mode";
+
+// Placeholder sounds from the base game until the pack ships its own recorded ones (see DESIGN.md). A cue mapped to
+// null is silent for now.
+export const SOUNDS = {
+  crickets: null,
+  owl: { id: "note.flute", pitch: 0.55 },
+  wind_in_branches: null,
+  distant_howl: null,
+  twig_snap: { id: "step.wood", pitch: 1.5 },
+  heartbeat: { id: "note.bd", pitch: 0.45 },
+};
+
+const log = (msg) => console.warn(`[DeepNight] ${msg}`);
+const seen = new Map(); // player id -> eased distance
+const cues = new Map(); // player id -> { at: tick, last: cue name }
+const debug = { time: undefined, dark: undefined, off: false };
+
+const mode = () => {
+  const m = world.getDynamicProperty(MODE_KEY);
+  return typeof m === "string" ? m : "normal";
+};
+
+function worldTick() {
+  if (debug.time !== undefined) return debug.time;
+  try {
+    return world.getTimeOfDay();
+  } catch {
+    return 6000; // no clock: treat as day, never dark by mistake
+  }
+}
+
+function sky() {
+  const out = {};
+  try {
+    out.moon = world.getMoonPhase();
+  } catch {
+    // older builds: no moon phase
+  }
+  try {
+    const w = world.getDimension("overworld").getWeather();
+    out.overcast = w === "Thunder" ? 1 : w === "Rain" ? 0.6 : 0;
+  } catch {
+    out.overcast = 0;
+  }
+  return out;
+}
+
+// The light of an item in a hand, or of a placed light block.
+function held(player) {
+  let best = 0;
+  try {
+    const main = player.getComponent("minecraft:inventory")?.container?.getItem(player.selectedSlotIndex);
+    if (main) best = Math.max(best, lightOf(main.typeId));
+    const off = player.getComponent("minecraft:equippable")?.getEquipment("Offhand");
+    if (off) best = Math.max(best, lightOf(off.typeId));
+  } catch {
+    // no inventory yet
+  }
+  return best;
+}
+
+function blockLight(block) {
+  const id = block.typeId;
+  if (id === "minecraft:air") return 0;
+  const states = {};
+  if (id.endsWith("candle")) {
+    states.candles = block.permutation.getState("candles");
+    states.lit = block.permutation.getState("lit");
+  }
+  if (id.endsWith("campfire") && block.permutation.getState("extinguished") === true) return 0;
+  return lightOf(id, states);
+}
+
+// Light blocks within eight blocks, sampled every second column and from just below to just above the head: about
+// 300 block reads, a few times a second.
+function nearbyLights(player) {
+  const lights = [];
+  const { x, y, z } = player.location;
+  const dim = player.dimension;
+  for (let dx = -8; dx <= 8; dx += 2) {
+    for (let dz = -8; dz <= 8; dz += 2) {
+      for (let dy = -1; dy <= 2; dy++) {
+        try {
+          const block = dim.getBlock({ x: Math.floor(x) + dx, y: Math.floor(y) + dy, z: Math.floor(z) + dz });
+          if (!block) continue;
+          const level = blockLight(block);
+          if (level > 0) lights.push({ level, distance: Math.hypot(dx, dy, dz) });
+        } catch {
+          // unloaded
+        }
+      }
+    }
+  }
+  lights.sort((a, b) => b.level - a.level);
+  return lights.slice(0, 6);
+}
+
+function update() {
+  const tick = worldTick();
+  const darkness = debug.off ? 0 : debug.dark ?? darknessAt(tick, sky());
+  const base = seeingDistance(darkness, mode());
+  for (const player of world.getAllPlayers()) {
+    if (player.dimension.id !== "minecraft:overworld" || base === undefined) {
+      if (seen.delete(player.id)) clearFog(LAYER, player.id);
+      continue;
+    }
+    const lights = nearbyLights(player);
+    const inHand = held(player);
+    if (inHand > 0) lights.push({ level: inHand, distance: 0 });
+    const target = visibleDistance(base, lights);
+    const dist = easeDistance(seen.get(player.id), target, INTERVAL / 20);
+    seen.set(player.id, dist);
+    setFog(LAYER, player.id, { distance: dist, tint: "night" });
+    sounds(player, darkness);
+  }
+}
+
+function sounds(player, darkness) {
+  const now = system.currentTick;
+  const state = cues.get(player.id) ?? { at: now + 100, last: undefined };
+  if (now < state.at) {
+    cues.set(player.id, state);
+    return;
+  }
+  const cue = nextCue(darkness, Math.random, state.last);
+  if (!cue) {
+    cues.set(player.id, { at: now + 100, last: state.last });
+    return;
+  }
+  cues.set(player.id, { at: now + Math.round(cue.gap * 20), last: cue.name });
+  const sound = SOUNDS[cue.name];
+  if (!sound) return;
+  const at = { x: player.location.x + Math.cos(cue.angle) * cue.distance, y: player.location.y, z: player.location.z + Math.sin(cue.angle) * cue.distance };
+  try {
+    player.dimension.playSound(sound.id, at, { volume: cue.volume, pitch: sound.pitch * cue.pitch });
+  } catch {
+    // unloaded
+  }
+}
+
+export function startNight() {
+  startFogMixer({ packId: PACK_ID, log });
+  system.runInterval(update, INTERVAL);
+  world.afterEvents.playerLeave.subscribe(({ playerId }) => {
+    seen.delete(playerId);
+    cues.delete(playerId);
+  });
+  // Testing aids, from chat: /scriptevent dn:mode gentle|normal|pitch, dn:time 19000, dn:dark 3, dn:off, dn:auto
+  system.afterEvents.scriptEventReceive.subscribe(({ id, message, sourceEntity }) => {
+    const say = (text) => sourceEntity?.sendMessage?.(`[Deep Night] ${text}`);
+    const m = message.trim();
+    if (id === "dn:mode") {
+      world.setDynamicProperty(MODE_KEY, ["gentle", "normal", "pitch"].includes(m) ? m : "normal");
+      say(`mode ${mode()}`);
+    } else if (id === "dn:time") {
+      debug.time = m === "" ? undefined : Number(m);
+      say(m === "" ? "clock restored" : `clock fixed at ${m}`);
+    } else if (id === "dn:dark") {
+      debug.dark = m === "" ? undefined : Number(m);
+      debug.off = false;
+      say(m === "" ? "darkness follows the clock" : `darkness fixed at ${m}`);
+    } else if (id === "dn:off") {
+      debug.off = true;
+      say("off");
+    } else if (id === "dn:auto") {
+      debug.time = debug.dark = undefined;
+      debug.off = false;
+      say("automatic");
+    } else if (id === "dn:status") {
+      const d = debug.off ? 0 : debug.dark ?? darknessAt(worldTick(), sky());
+      say(`tick ${worldTick()}, darkness ${d.toFixed(2)}, mode ${mode()}, sees ${seen.get(sourceEntity?.id)?.toFixed(1) ?? "-"} blocks`);
+    }
+  });
+  log("started");
+}
