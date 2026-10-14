@@ -31,11 +31,14 @@ Install both packs in a world with cheats on, then:
 - `/scriptevent dn:mode gentle` and `pitch` change the pitch-black limit.
 - Whether the fog command stack behaves (one `kit_mix` entry per player; no flicker when the distance changes rung).
 - Whether the generated night sounds (`dn.*`, see `scripts/gen-sounds.py`) sound right: owl, crickets, wind, howl, twig, heartbeat. Use `/playsound dn.owl @s`.
+- Caves: night fog fades out between 3 and 14 blocks below the open sky, so caves keep the game's own dark and cellars stay night.
+- Flames flicker: torches, candles, campfires and lanterns waver a few percent, so the circle of light breathes.
+- Long nights: `/scriptevent dn:long 2` holds the clock back in the dark hours (12500 to 23500) so the night lasts 2 times as long (1 to 4).
+  Untested: check the sun still rises on time and nothing else reads a stalled clock.
 
 ## Not done yet
 - Recorded field sounds to replace the generated ones (optional, plainer is the trade-off). Royalty free only, with each licence in
   `assets/audio/LICENSES.md`; keep the same ids in `RP/sounds/sound_definitions.json`.
-- Caves and mines (same darkness, by how much rock is overhead).
-- Beacons (far lights seen through the fog), light flicker, lantern oil and matches, fireflies.
-- A settings form for the mode, and a per-world option to stop sleeping in the dark window.
-- Night length: at normal speed pitch black lasts about two and a half minutes; a half-speed night option is planned.
+- Beacons (far lights seen through the fog), lantern oil and matches, fireflies.
+- A settings form for the mode (the pack has no UI dependency yet), and a per-world option to stop sleeping in the dark window.
+

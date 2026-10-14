@@ -5,7 +5,7 @@
 import { system, world } from "@minecraft/server";
 import { clearFog, setFog, startFogMixer } from "./kit/fog-mixer.js";
 import { lightOf } from "./kit/luminance.js";
-import { darknessAt, easeDistance, nextCue, seeingDistance, visibleDistance } from "./night-logic.js";
+import { darknessAt, easeDistance, flameLevel, holdClock, isFlame, nextCue, seeingDistance, surfaceFactor, undergroundDistance, visibleDistance } from "./night-logic.js";
 
 export const PACK_ID = "deep-night-f2a93cb9";
 const INTERVAL = 10; // ticks between updates
@@ -60,12 +60,15 @@ function sky() {
 
 // The light of an item in a hand, or of a placed light block.
 function held(player) {
-  let best = 0;
+  let best = { level: 0, flame: false };
+  const consider = (item) => {
+    if (!item) return;
+    const level = lightOf(item.typeId);
+    if (level > best.level) best = { level, flame: isFlame(item.typeId) };
+  };
   try {
-    const main = player.getComponent("minecraft:inventory")?.container?.getItem(player.selectedSlotIndex);
-    if (main) best = Math.max(best, lightOf(main.typeId));
-    const off = player.getComponent("minecraft:equippable")?.getEquipment("Offhand");
-    if (off) best = Math.max(best, lightOf(off.typeId));
+    consider(player.getComponent("minecraft:inventory")?.container?.getItem(player.selectedSlotIndex));
+    consider(player.getComponent("minecraft:equippable")?.getEquipment("Offhand"));
   } catch {
     // no inventory yet
   }
@@ -97,7 +100,7 @@ function nearbyLights(player) {
           const block = dim.getBlock({ x: Math.floor(x) + dx, y: Math.floor(y) + dy, z: Math.floor(z) + dz });
           if (!block) continue;
           const level = blockLight(block);
-          if (level > 0) lights.push({ level, distance: Math.hypot(dx, dy, dz) });
+          if (level > 0) lights.push({ level: flameLevel(level, isFlame(block.typeId), system.currentTick, dx * 7 + dz * 3), distance: Math.hypot(dx, dy, dz) });
         } catch {
           // unloaded
         }
@@ -106,6 +109,16 @@ function nearbyLights(player) {
   }
   lights.sort((a, b) => b.level - a.level);
   return lights.slice(0, 6);
+}
+
+// How far below the open sky the player is: 0 in the open, large deep in a cave. Reads the top block of the column.
+function depthBelowSurface(player) {
+  try {
+    const top = player.dimension.getTopmostBlock({ x: Math.floor(player.location.x), z: Math.floor(player.location.z) });
+    return top ? Math.max(0, top.location.y + 1 - player.location.y) : 0;
+  } catch {
+    return 0;
+  }
 }
 
 function update() {
@@ -119,8 +132,9 @@ function update() {
     }
     const lights = nearbyLights(player);
     const inHand = held(player);
-    if (inHand > 0) lights.push({ level: inHand, distance: 0 });
-    const target = visibleDistance(base, lights);
+    if (inHand.level > 0) lights.push({ level: flameLevel(inHand.level, inHand.flame, system.currentTick), distance: 0 });
+    const lit = visibleDistance(base, lights);
+    const target = undergroundDistance(lit, surfaceFactor(depthBelowSurface(player)));
     const dist = easeDistance(seen.get(player.id), target, INTERVAL / 20);
     seen.set(player.id, dist);
     setFog(LAYER, player.id, { distance: dist, tint: "night" });
@@ -154,6 +168,21 @@ function sounds(player, darkness) {
 export function startNight() {
   startFogMixer({ packId: PACK_ID, log });
   system.runInterval(update, INTERVAL);
+  // Long nights: hold the clock back during the dark hours (dn:long 2 makes the night twice as long).
+  let counter = 0;
+  system.runInterval(() => {
+    const factor = Number(world.getDynamicProperty("dn:long") ?? 1);
+    if (debug.time !== undefined || factor <= 1) return;
+    counter += 1;
+    const t = worldTick();
+    if (holdClock(t, counter, factor)) {
+      try {
+        world.setTimeOfDay(t - 1);
+      } catch {
+        // clock not settable
+      }
+    }
+  }, 1);
   world.afterEvents.playerLeave.subscribe(({ playerId }) => {
     seen.delete(playerId);
     cues.delete(playerId);
@@ -165,6 +194,10 @@ export function startNight() {
     if (id === "dn:mode") {
       world.setDynamicProperty(MODE_KEY, ["gentle", "normal", "pitch"].includes(m) ? m : "normal");
       say(`mode ${mode()}`);
+    } else if (id === "dn:long") {
+      const f = Math.min(4, Math.max(1, Number(m) || 1));
+      world.setDynamicProperty("dn:long", f);
+      say(`the night is ${f} times as long`);
     } else if (id === "dn:time") {
       debug.time = m === "" ? undefined : Number(m);
       say(m === "" ? "clock restored" : `clock fixed at ${m}`);

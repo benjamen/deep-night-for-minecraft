@@ -119,3 +119,36 @@ export function nextCue(darkness, rand, last) {
   const gap = cueGap(darkness) * (0.6 + rand() * 0.8);
   return { ...cue, distance: cue.near + rand() * (cue.far - cue.near), angle: rand() * Math.PI * 2, pitch: 0.85 + rand() * 0.3, gap };
 }
+
+// ---- Caves, flames and long nights ----
+
+// How much of the night's dark applies to a player `depth` blocks below the open surface above them: none to 3 blocks
+// (a cellar, a porch), all of it in the open, and fading out below that, because deep rock is already dark and a cave
+// should be the game's own dark, not fog on top. Returns 0 (underground, no night fog) to 1 (full).
+export const surfaceFactor = (depth) => 1 - smoothstep(3, 14, depth) * (depth > 3 ? 1 : 0);
+
+// Blend a seen distance toward "no fog" (200 blocks) by how underground the player is, in log space.
+export function undergroundDistance(distance, factor) {
+  if (distance === undefined) return undefined;
+  const open = 200;
+  return Math.exp(Math.log(distance) * factor + Math.log(open) * (1 - factor));
+}
+
+// Candle and torch flames waver: a multiplier near 1 that changes a few times a second, from a few sines so every flame in
+// the same tick agrees (`phase` offsets one flame from another). `tick` is the game tick.
+export const flicker = (tick, phase = 0) => 1 + Math.sin(tick * 0.9 + phase) * 0.05 + Math.sin(tick * 2.3 + phase * 2) * 0.04 + Math.sin(tick * 0.31) * 0.03;
+
+// The light level a source gives once it flickers: flames waver, lamps and glowstone do not. Never below 1 for a source
+// that gave any light.
+export const flameLevel = (level, flame, tick, phase = 0) => (level <= 0 ? 0 : flame ? Math.max(1, level * flicker(tick, phase)) : level);
+
+// Is this item or block a naked flame? (It flickers.)
+export const isFlame = (typeId) => /torch|candle|campfire|fire|lantern|lava/.test(typeId) && !/redstone|sea_lantern|firefly/.test(typeId);
+
+// Long nights: during the dark hours the clock can be held back so the night is `factor` times longer (1 normal, up to 4).
+// Returns true on the game ticks the clock should be put back by one. `counter` is a tick count; `tick` is the time of day.
+export function holdClock(tick, counter, factor) {
+  const f = clamp(factor, 1, 4);
+  if (f <= 1 || tick < 12500 || tick > 23500) return false;
+  return Math.floor(counter * (1 - 1 / f)) !== Math.floor((counter - 1) * (1 - 1 / f));
+}
