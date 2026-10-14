@@ -5,7 +5,7 @@
 import { system, world } from "@minecraft/server";
 import { clearFog, setFog, startFogMixer } from "./kit/fog-mixer.js";
 import { lightOf } from "./kit/luminance.js";
-import { darknessAt, easeDistance, flameLevel, holdClock, isFlame, nextCue, seeingDistance, surfaceFactor, undergroundDistance, visibleDistance } from "./night-logic.js";
+import { darknessAt, easeDistance, flameLevel, canSleep, holdClock, isFlame, nextCue, seeingDistance, surfaceFactor, undergroundDistance, visibleDistance } from "./night-logic.js";
 
 export const PACK_ID = "deep-night-f2a93cb9";
 const INTERVAL = 10; // ticks between updates
@@ -168,6 +168,13 @@ function sounds(player, darkness) {
 export function startNight() {
   startFogMixer({ packId: PACK_ID, log });
   system.runInterval(update, INTERVAL);
+  // No sleeping through the dark: with dn:nosleep on, beds refuse during the deep night.
+  world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
+    if (!event.block.typeId.endsWith("_bed") || world.getDynamicProperty("dn:nosleep") !== true) return;
+    if (canSleep(worldTick(), true)) return;
+    event.cancel = true;
+    system.run(() => event.player.onScreenDisplay.setActionBar("§7You can't sleep. Something is out there."));
+  });
   // Long nights: hold the clock back during the dark hours (dn:long 2 makes the night twice as long).
   let counter = 0;
   system.runInterval(() => {
@@ -194,6 +201,9 @@ export function startNight() {
     if (id === "dn:mode") {
       world.setDynamicProperty(MODE_KEY, ["gentle", "normal", "pitch"].includes(m) ? m : "normal");
       say(`mode ${mode()}`);
+    } else if (id === "dn:nosleep") {
+      world.setDynamicProperty("dn:nosleep", m !== "off");
+      say(`sleeping through the dark is ${m === "off" ? "allowed" : "blocked"}`);
     } else if (id === "dn:long") {
       const f = Math.min(4, Math.max(1, Number(m) || 1));
       world.setDynamicProperty("dn:long", f);

@@ -152,3 +152,7 @@ export function holdClock(tick, counter, factor) {
   if (f <= 1 || tick < 12500 || tick > 23500) return false;
   return Math.floor(counter * (1 - 1 / f)) !== Math.floor((counter - 1) * (1 - 1 / f));
 }
+
+// May the player sleep at this time of day? With the "no sleeping" option on, beds refuse during the dark hours so the
+// deep night has to be lived through. Beds work normally otherwise.
+export const canSleep = (tick, noSleepOption) => !noSleepOption || tick < 13000 || tick > 23000;

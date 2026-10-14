@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { flameLevel, flicker, holdClock, isFlame, surfaceFactor, undergroundDistance } from "../BP/scripts/night-logic.js";
+import { canSleep, flameLevel, flicker, holdClock, isFlame, surfaceFactor, undergroundDistance } from "../BP/scripts/night-logic.js";
 
 test("caves: full night in the open and at a cellar's depth, none deep in rock", () => {
   assert.equal(surfaceFactor(0), 1);
@@ -43,4 +43,11 @@ test("long night: the clock is held back only in the dark hours, and the night c
 test("night.js uses them and offers dn:long", () => {
   const src = readFileSync(new URL("../BP/scripts/night.js", import.meta.url), "utf8");
   for (const word of ["surfaceFactor", "flameLevel", "holdClock", "dn:long"]) assert.ok(src.includes(word), word);
+});
+
+test("sleep: beds refuse in the dark hours only when the option is on", () => {
+  assert.ok(canSleep(18000, false), "option off: always");
+  assert.ok(!canSleep(18000, true) && !canSleep(14000, true) && !canSleep(22500, true));
+  assert.ok(canSleep(6000, true) && canSleep(12500, true) && canSleep(23500, true));
+  assert.match(readFileSync(new URL("../BP/scripts/night.js", import.meta.url), "utf8"), /dn:nosleep/);
 });
