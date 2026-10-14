@@ -3,15 +3,17 @@
 import { aimVelocity, lobVelocity } from "./aim.js";
 
 // Fire `count` of `type` from `from` toward `to` at `speed` blocks per tick, fanned by `spread` degrees each side.
-// With `lob: { gravity, ticks }` it is thrown in a high arc to land on `to` instead (over walls).
+// With `lob: { gravity, ticks }` it is thrown in a high arc to land on `to` instead (over walls). With `tag`, each
+// projectile is tagged so a hit hook can tell it from a base-game one of the same type (a hailstone from a snowball).
 // Returns how many were fired.
-export function fireAt(dimension, type, from, to, { speed = 1.2, spread = 0, count = 1, owner, lob } = {}) {
+export function fireAt(dimension, type, from, to, { speed = 1.2, spread = 0, count = 1, owner, lob, tag } = {}) {
   let fired = 0;
   for (let k = 0; k < count; k++) {
     const fan = count > 1 ? -spread + (2 * spread * k) / (count - 1) : 0;
     const v = lob ? lobVelocity(from, to, lob.gravity, lob.ticks) : aimVelocity(from, to, speed, fan);
     try {
       const e = dimension.spawnEntity(type, from);
+      if (tag) e.addTag(tag);
       const proj = e.getComponent("minecraft:projectile");
       if (proj && typeof proj.shoot === "function") {
         if (owner) proj.owner = owner;

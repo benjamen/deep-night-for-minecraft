@@ -1,6 +1,6 @@
 {
   "kit": "bedrock-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "files": {
     "abilities.js": "ee975cf028c6",
     "ability-runner.js": "fcb5ac42efc6",
@@ -15,7 +15,7 @@
     "intensity.js": "888dfcbe80f0",
     "luminance.js": "051900865a4f",
     "projectile-hooks.js": "8bbe2559ceee",
-    "projectiles.js": "3204dfc45faf",
+    "projectiles.js": "e817c379eef5",
     "scene-math.js": "1265167d96ed",
     "scene-player.js": "486da957b9b0",
     "sea-patrol.js": "b671aca2be7c",
