@@ -112,3 +112,15 @@ test("night sounds: silent by day, never the same twice, spaced out more as the 
   assert.equal(names.size, CUES.length);
   assert.ok(CUES.some((c) => c.to === 3 && c.from >= 2.4), "pitch black has its own sounds");
 });
+
+test("sounds: every cue has a sound id that is defined, and every defined file exists", async () => {
+  const { readFileSync, existsSync } = await import("node:fs");
+  const { SOUNDS } = await import("../BP/scripts/night.js").catch(() => ({ SOUNDS: null }));
+  const defs = JSON.parse(readFileSync(new URL("../RP/sounds/sound_definitions.json", import.meta.url), "utf8")).sound_definitions;
+  const src = readFileSync(new URL("../BP/scripts/night.js", import.meta.url), "utf8");
+  const ids = [...src.matchAll(/id: "(dn\.[a-z]+)"/g)].map((m) => m[1]);
+  assert.equal(ids.length, CUES.length, "one sound per cue");
+  for (const id of ids) assert.ok(defs[id], `${id} is defined`);
+  for (const d of Object.values(defs)) for (const f of d.sounds) assert.ok(existsSync(new URL(`../RP/${f.name}.ogg`, import.meta.url)), f.name);
+  void SOUNDS;
+});

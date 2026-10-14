@@ -30,11 +30,11 @@ Install both packs in a world with cheats on, then:
 - Place a lamp, stand in its pool, step out: the glow should fade over a second or two.
 - `/scriptevent dn:mode gentle` and `pitch` change the pitch-black limit.
 - Whether the fog command stack behaves (one `kit_mix` entry per player; no flicker when the distance changes rung).
-- Whether the base game's placeholder sounds are tolerable (owl is a low flute note; the heartbeat is a bass drum).
+- Whether the generated night sounds (`dn.*`, see `scripts/gen-sounds.py`) sound right: owl, crickets, wind, howl, twig, heartbeat. Use `/playsound dn.owl @s`.
 
 ## Not done yet
-- Recorded sounds: crickets, owl, wind in branches, a distant howl. Royalty free only, with each licence recorded in
-  `assets/audio/LICENSES.md`. Until then the table in `night.js` maps cues to base-game sounds, or to nothing.
+- Recorded field sounds to replace the generated ones (optional, plainer is the trade-off). Royalty free only, with each licence in
+  `assets/audio/LICENSES.md`; keep the same ids in `RP/sounds/sound_definitions.json`.
 - Caves and mines (same darkness, by how much rock is overhead).
 - Beacons (far lights seen through the fog), light flicker, lantern oil and matches, fireflies.
 - A settings form for the mode, and a per-world option to stop sleeping in the dark window.

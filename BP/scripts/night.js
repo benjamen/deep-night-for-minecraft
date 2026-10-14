@@ -15,12 +15,12 @@ const MODE_KEY = "dn:mode";
 // Placeholder sounds from the base game until the pack ships its own recorded ones (see DESIGN.md). A cue mapped to
 // null is silent for now.
 export const SOUNDS = {
-  crickets: null,
-  owl: { id: "note.flute", pitch: 0.55 },
-  wind_in_branches: null,
-  distant_howl: null,
-  twig_snap: { id: "step.wood", pitch: 1.5 },
-  heartbeat: { id: "note.bd", pitch: 0.45 },
+  crickets: { id: "dn.crickets", pitch: 1 },
+  owl: { id: "dn.owl", pitch: 1 },
+  wind_in_branches: { id: "dn.wind", pitch: 1 },
+  distant_howl: { id: "dn.howl", pitch: 1 },
+  twig_snap: { id: "dn.twig", pitch: 1 },
+  heartbeat: { id: "dn.heartbeat", pitch: 1 },
 };
 
 const log = (msg) => console.warn(`[DeepNight] ${msg}`);
