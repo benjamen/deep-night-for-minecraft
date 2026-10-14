@@ -1,0 +1,10 @@
+{
+  "name": "deep-night-for-minecraft",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "sync-kit": "node ../bedrock-kit/scripts/sync-kit.mjs BP/scripts/kit && node ../bedrock-kit/scripts/gen-fogs.mjs RP/fogs"
+  }
+}

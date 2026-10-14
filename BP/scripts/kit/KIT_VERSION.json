@@ -1,0 +1,27 @@
+{
+  "kit": "bedrock-kit",
+  "version": "0.1.0",
+  "files": {
+    "abilities.js": "ee975cf028c6",
+    "ability-runner.js": "fcb5ac42efc6",
+    "actors.js": "aacd2812eef4",
+    "aim.js": "f2b2324bef96",
+    "cells.js": "3c0b2cf309b4",
+    "effects.js": "43e3a03b4ed6",
+    "elements.js": "91d9cf5be2c9",
+    "fog-mixer.js": "563d342a9868",
+    "fog.js": "d73a3bf506ee",
+    "forms.js": "dff137440760",
+    "intensity.js": "888dfcbe80f0",
+    "luminance.js": "051900865a4f",
+    "projectile-hooks.js": "8bbe2559ceee",
+    "projectiles.js": "3204dfc45faf",
+    "scene-math.js": "1265167d96ed",
+    "scene-player.js": "486da957b9b0",
+    "sea-patrol.js": "b671aca2be7c",
+    "shelter.js": "0f8aa0f3e207",
+    "temp-blocks.js": "1c203f5f5c88",
+    "tide.js": "8c15b8f7da84",
+    "water-zones.js": "13f6a8372b89"
+  }
+}
