@@ -15,15 +15,18 @@ const applied = new Map(); // player id -> { id, tint, step }
 let me = "pack";
 let ladder = DEFAULT_LADDER;
 let logger = () => {};
-let canBroadcast = true;
+let failures = 0;
 
+// Script events cannot be sent while the world is still loading (the scripts' first run is before it), so a failure is
+// not final: the hello is sent again every few seconds. Only a build that never manages one runs alone.
 function broadcast(id, payload) {
-  if (!canBroadcast) return;
   try {
     system.sendScriptEvent(id, JSON.stringify(payload));
-  } catch {
-    canBroadcast = false; // no cross-pack messages here: this copy runs alone
-    logger("fog mixer: script events unavailable, running alone");
+    if (failures >= 3) logger("fog mixer: script events work now");
+    failures = 0;
+  } catch (e) {
+    failures++;
+    if (failures === 3) logger(`fog mixer: script events failing (${e}); running alone until they work`);
   }
 }
 
@@ -100,5 +103,5 @@ export function startFogMixer({ packId, fogLadder = DEFAULT_LADDER, log = () => 
   system.runInterval(() => broadcast("kit:hello", { from: me }), HELLO_EVERY);
   system.runInterval(step, 10);
   world.afterEvents.playerLeave.subscribe(({ playerId }) => applied.delete(playerId));
-  broadcast("kit:hello", { from: me });
+  system.run(() => broadcast("kit:hello", { from: me })); // after the world has loaded
 }
