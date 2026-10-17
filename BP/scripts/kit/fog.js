@@ -55,8 +55,10 @@ const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
 // Mix asks ({ distance, tint }) where `tint` is a name from `tints` or a "#rrggbb" string. Returns
 // { distance, color: [r,g,b] }, or null when nobody is asking for any fog.
+// An ask with `exclusive: true` (a cut scene that needs a clear view) is mixed alone: the others are ignored while it lasts.
 export function mixFog(asks, tints = DEFAULT_TINTS) {
-  const live = asks.filter((a) => a && a.distance > 0);
+  const all = asks.filter((a) => a && a.distance > 0);
+  const live = all.some((a) => a.exclusive) ? all.filter((a) => a.exclusive) : all;
   if (!live.length) return null;
   let density = 0;
   const sum = [0, 0, 0];

@@ -32,9 +32,9 @@ function broadcast(id, payload) {
 
 // Ask for fog on one player (`player` is a player id, or "*" for everyone). `layer` names who is asking, such as
 // "night" or "rain". Call it again to change or refresh the ask; it lapses after about three seconds otherwise.
-export function setFog(layer, player, { distance, tint = "mist" }) {
+export function setFog(layer, player, { distance, tint = "mist", exclusive = false }) {
   const now = system.currentTick;
-  const ask = { layer, player, distance, tint, until: now + TTL, from: me };
+  const ask = { layer, player, distance, tint, exclusive, until: now + TTL, from: me };
   asks.set(`${layer}|${player}`, ask);
   broadcast("kit:fog", ask);
 }
