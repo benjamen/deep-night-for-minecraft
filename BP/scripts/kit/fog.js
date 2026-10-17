@@ -9,7 +9,8 @@ export const FOG_NAMESPACE = "kit";
 
 // Tints are named so asks stay readable; a pack can pass its own { name: "#rrggbb" } map.
 export const DEFAULT_TINTS = Object.freeze({
-  black: "#000000", night: "#05070f", grey: "#9aa3a8", mist: "#c9d2d6", ash: "#4a4642", dust: "#b59a6b", snow: "#e8eef2",
+  black: "#000000", night: "#05070f", dim: "#2b333b", slate: "#59636d", haze: "#7b858e", grey: "#9aa3a8", mist: "#c9d2d6",
+  ash: "#4a4642", dust: "#b59a6b", snow: "#e8eef2", // (a grey ramp between night and mist: mixed layers snap to a grey, never to brown ash)
 });
 
 export const DEFAULT_LADDER = Object.freeze({ steps: 12, min: 3, max: 96, tints: DEFAULT_TINTS, startRatio: 0.15 });

@@ -1,0 +1,22 @@
+{
+  "format_version": "1.16.100",
+  "minecraft:fog_settings": {
+    "description": {
+      "identifier": "kit:fog_slate_6"
+    },
+    "distance": {
+      "air": {
+        "fog_start": 3,
+        "fog_end": 19.9,
+        "fog_color": "#59636d",
+        "render_distance_type": "fixed"
+      },
+      "water": {
+        "fog_start": 0,
+        "fog_end": 10,
+        "fog_color": "#59636d",
+        "render_distance_type": "fixed"
+      }
+    }
+  }
+}

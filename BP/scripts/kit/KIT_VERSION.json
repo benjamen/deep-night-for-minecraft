@@ -1,6 +1,6 @@
 {
   "kit": "bedrock-kit",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "files": {
     "abilities.js": "ee975cf028c6",
     "ability-runner.js": "fcb5ac42efc6",
@@ -10,7 +10,7 @@
     "effects.js": "43e3a03b4ed6",
     "elements.js": "91d9cf5be2c9",
     "fog-mixer.js": "3b3540b89041",
-    "fog.js": "67cbc3cd5db7",
+    "fog.js": "9d99647d7e20",
     "forms.js": "dff137440760",
     "ground.js": "d346d039e199",
     "held-light.js": "3e7696b18427",
