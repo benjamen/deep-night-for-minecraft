@@ -1,6 +1,6 @@
 {
   "kit": "bedrock-kit",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "files": {
     "abilities.js": "ee975cf028c6",
     "ability-runner.js": "fcb5ac42efc6",
@@ -19,7 +19,7 @@
     "projectiles.js": "e817c379eef5",
     "scene-math.js": "1265167d96ed",
     "scene-player.js": "5a5b3d76cfa6",
-    "sea-patrol.js": "b671aca2be7c",
+    "sea-patrol.js": "c4a6d2330fa6",
     "shelter.js": "0f8aa0f3e207",
     "temp-blocks.js": "1c203f5f5c88",
     "tide.js": "8c15b8f7da84",

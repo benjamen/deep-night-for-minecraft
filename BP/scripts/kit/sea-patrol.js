@@ -26,6 +26,14 @@ export function homeOf(entity) {
   }
 }
 
+// Make a creature the game spawned itself (a scene's actor, say) one of the patrol's: it is tagged as the patrol's own, kept
+// in `zone`, and remembers where it is now as its home, so the game's leash and clear-away rules apply to it from here on.
+export function adoptPatrol(entity, zone, home = entity.location) {
+  entity.addTag(PATROL_TAG);
+  entity.addTag(`${PATROL_TAG}_${zone}`);
+  entity.setDynamicProperty(HOME, JSON.stringify({ x: home.x, y: home.y, z: home.z }));
+}
+
 // The block a water creature can be put in at column (x, z): `below` blocks under the surface, if that is still
 // water. Undefined when the column is not water, not loaded, or too shallow.
 function waterSpot(dimension, x, z, below) {
