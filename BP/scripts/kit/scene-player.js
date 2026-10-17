@@ -8,6 +8,8 @@ import { system, world } from "@minecraft/server";
 import { cameraCommand, fadeCommand } from "./scene-math.js";
 
 const playing = new Set(); // player ids in a scene right now
+const skipping = new Set(); // player ids asked to skip their scene (skipScene)
+const stoppers = new Map(); // player id -> stops that player's scene timer
 const live = (id) => world.getAllPlayers().find((p) => p.id === id);
 
 function run(player, command, log) {
@@ -19,6 +21,20 @@ function run(player, command, log) {
 }
 
 export const isInScene = (player) => playing.has(player.id);
+
+// Ask the scene this player is in to skip to its end on the next tick (for testing, and for a skip button).
+export function skipScene(player) {
+  if (playing.has(player.id)) skipping.add(player.id);
+}
+
+// Stop the scene this player is in right now, wherever it has got to: no more shots, no final stand, no onEnd. Everything
+// is handed back. For a reset (testing) or a player who must not finish the scene they were in.
+export function cancelScene(player, log) {
+  stoppers.get(player.id)?.();
+  stoppers.delete(player.id);
+  skipping.delete(player.id);
+  handBack(player, log);
+}
 
 // Take the camera, the HUD and the controls.
 export function takeOver(player, log) {
@@ -32,7 +48,14 @@ export function handBack(player, log) {
   for (const c of ["camera @s clear", "inputpermission set @s movement enabled", "inputpermission set @s camera enabled", "hud @s reset"]) run(player, c, log);
 }
 
-const standCommand = ({ pos, facing }) => `tp @s ${pos.x} ${pos.y} ${pos.z} facing ${facing.x} ${facing.y} ${facing.z}`;
+// Put the player at `pos`, facing `facing`: through the API, not `tp`, so no "You have been teleported" line shows in chat.
+function stand(player, { pos, facing }, log) {
+  try {
+    player.teleport(pos, { facingLocation: facing });
+  } catch (e) {
+    log?.(`scene stand failed: ${e}`);
+  }
+}
 
 // Play `scene`. Options:
 //   skippable  sneaking (after the first second) skips to the end. Default true.
@@ -43,14 +66,16 @@ const standCommand = ({ pos, facing }) => `tp @s ${pos.x} ${pos.y} ${pos.z} faci
 export function playScene(player, scene, { skippable = true, onTick, onEnd, log } = {}) {
   if (playing.has(player.id)) return false;
   const id = player.id;
-  if (scene.stand) run(player, standCommand(scene.stand), log);
+  if (scene.stand) stand(player, scene.stand, log);
   takeOver(player, log);
   const shots = [...scene.shots].sort((a, b) => a.at - b.at);
   let tick = 0;
   let next = 0;
   const finish = (p, result) => {
     system.clearRun(timer);
-    if (scene.stand) run(p, standCommand(scene.stand), log);
+    stoppers.delete(id);
+    skipping.delete(id);
+    if (scene.stand) stand(p, scene.stand, log);
     handBack(p, log);
     try {
       onEnd?.(p, result);
@@ -61,12 +86,14 @@ export function playScene(player, scene, { skippable = true, onTick, onEnd, log 
   const timer = system.runInterval(() => {
     const p = live(id);
     if (!p) {
+      stoppers.delete(id);
       playing.delete(id);
+      skipping.delete(id);
       system.clearRun(timer);
       return;
     }
     try {
-      const skip = skippable && tick > 20 && p.isSneaking;
+      const skip = skippable && ((tick > 20 && p.isSneaking) || skipping.has(id));
       while (!skip && next < shots.length && shots[next].at <= tick) {
         const s = shots[next++];
         if (s.fade) run(p, fadeCommand(s.fade), log);
@@ -95,5 +122,6 @@ export function playScene(player, scene, { skippable = true, onTick, onEnd, log 
     }
     tick++;
   }, 1);
+  stoppers.set(id, () => system.clearRun(timer));
   return true;
 }
