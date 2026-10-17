@@ -58,9 +58,11 @@ function take(placed) {
 // `counts(typeId)`: does holding this item give light. `level`: how bright (1 to 15). `held(player)`: the type id of the
 // item in the player's hand, if the game has its own way to read it (defaults to the selected hotbar slot).
 export function startHeldLight({ counts, level = 12, held, log = () => {} }) {
-  // Clean up whatever a last run left.
-  for (const placed of Object.values(readAll())) take(placed);
-  writeAll({});
+  // Clean up whatever a last run left (world properties cannot be touched while the scripts are first loading).
+  system.run(() => {
+    for (const placed of Object.values(readAll())) take(placed);
+    writeAll({});
+  });
   const heldOf = held ?? ((p) => p.getComponent("minecraft:inventory")?.container?.getItem(p.selectedSlotIndex)?.typeId);
   const mine = new Map(); // player id -> { x, y, z, dim }
   const release = (id) => {
