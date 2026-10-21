@@ -196,9 +196,12 @@ export function startNight() {
   });
   // Testing aids, from chat: /scriptevent dn:mode gentle|normal|pitch, dn:time 19000, dn:dark 3, dn:off, dn:auto
   system.afterEvents.scriptEventReceive.subscribe(({ id, message, sourceEntity }) => {
-    const say = (text) => sourceEntity?.sendMessage?.(`[Deep Night] ${text}`);
+    // Quiet (`/scriptevent dn:quiet on`): no chat replies, for a game that drives the night by script event; the line goes to the log.
+    const say = (text) => (world.getDynamicProperty("dn:quiet") === "on" ? console.warn(`[Deep Night] ${text}`) : sourceEntity?.sendMessage?.(`[Deep Night] ${text}`));
     const m = message.trim();
-    if (id === "dn:mode") {
+    if (id === "dn:quiet") {
+      world.setDynamicProperty("dn:quiet", m === "off" ? "off" : "on");
+    } else if (id === "dn:mode") {
       world.setDynamicProperty(MODE_KEY, ["gentle", "normal", "pitch"].includes(m) ? m : "normal");
       say(`mode ${mode()}`);
     } else if (id === "dn:nosleep") {
