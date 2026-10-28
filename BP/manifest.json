@@ -4,7 +4,7 @@
     "name": "Deep Night",
     "description": "A natural, intense darkness for the small hours, lit only by what you carry.",
     "uuid": "f2a93cb9-78ab-4a9b-a09c-83d85942f0a6",
-    "version": [0, 3, 4],
+    "version": [0, 3, 5],
     "min_engine_version": [
       1,
       26,
@@ -17,13 +17,13 @@
       "language": "javascript",
       "entry": "scripts/main.js",
       "uuid": "775a63bf-83d8-46c0-9c22-69beef7858e7",
-      "version": [0, 3, 4]
+      "version": [0, 3, 5]
     }
   ],
   "dependencies": [
     {
       "uuid": "6e6262c0-70bb-415d-9362-69c9b8506cff",
-      "version": [0, 3, 4]
+      "version": [0, 3, 5]
     },
     {
       "module_name": "@minecraft/server",

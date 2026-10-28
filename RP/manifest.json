@@ -4,7 +4,7 @@
     "name": "Deep Night Resources",
     "description": "Fog, particles, sounds and models for Deep Night.",
     "uuid": "6e6262c0-70bb-415d-9362-69c9b8506cff",
-    "version": [0, 3, 4],
+    "version": [0, 3, 5],
     "min_engine_version": [
       1,
       26,
@@ -15,7 +15,7 @@
     {
       "type": "resources",
       "uuid": "a4fa7a1f-594a-4fbf-a11c-fe307f6a470f",
-      "version": [0, 3, 4]
+      "version": [0, 3, 5]
     }
   ]
 }

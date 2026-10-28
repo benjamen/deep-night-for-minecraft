@@ -4,6 +4,7 @@
 // not been run in a game yet (see DESIGN.md for what to check first).
 import { system, world } from "@minecraft/server";
 import { clearFog, setFog, startFogMixer } from "./kit/fog-mixer.js";
+import { startHeldLight } from "./kit/held-light.js";
 import { lightOf } from "./kit/luminance.js";
 import { darknessAt, easeDistance, flameLevel, canSleep, holdClock, isFlame, nextCue, seeingDistance, surfaceFactor, undergroundDistance, visibleDistance } from "./night-logic.js";
 
@@ -60,11 +61,11 @@ function sky() {
 
 // The light of an item in a hand, or of a placed light block.
 function held(player) {
-  let best = { level: 0, flame: false };
+  let best = { level: 0, flame: false, id: undefined };
   const consider = (item) => {
     if (!item) return;
     const level = lightOf(item.typeId);
-    if (level > best.level) best = { level, flame: isFlame(item.typeId) };
+    if (level > best.level) best = { level, flame: isFlame(item.typeId), id: item.typeId };
   };
   try {
     consider(player.getComponent("minecraft:inventory")?.container?.getItem(player.selectedSlotIndex));
@@ -168,6 +169,10 @@ function sounds(player, darkness) {
 
 export function startNight() {
   startFogMixer({ packId: PACK_ID, log });
+  // Any carried light source lights a circle around its bearer too: an invisible light block kept at their head and moved
+  // with them (kit/held-light.js). The fog below already counts what is held for seeing; this is the world's own light,
+  // which is what monsters spawn by and what lets signs and walls near the bearer be read.
+  startHeldLight({ counts: (typeId) => lightOf(typeId) > 0, held: (p) => held(p).id, log });
   system.runInterval(update, INTERVAL);
   // No sleeping through the dark: with dn:nosleep on, beds refuse during the deep night.
   world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
