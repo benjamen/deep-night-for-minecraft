@@ -169,10 +169,11 @@ function sounds(player, darkness) {
 
 export function startNight() {
   startFogMixer({ packId: PACK_ID, log });
-  // Any carried light source lights a circle around its bearer too: an invisible light block kept at their head and moved
-  // with them (kit/held-light.js). The fog below already counts what is held for seeing; this is the world's own light,
-  // which is what monsters spawn by and what lets signs and walls near the bearer be read.
-  startHeldLight({ counts: (typeId) => lightOf(typeId) > 0, held: (p) => held(p).id, log });
+  // Any carried light source lights a circle around its bearer too: a full-strength light block kept at their head and
+  // moved with them (kit/held-light.js). The fog below already counts what is held for seeing — and counts it wider than
+  // a light set down — this is the world's own light, which is what monsters spawn by and what lets signs and walls near
+  // the bearer be read.
+  startHeldLight({ counts: (typeId) => lightOf(typeId) > 0, level: 15, held: (p) => held(p).id, log });
   system.runInterval(update, INTERVAL);
   // No sleeping through the dark: with dn:nosleep on, beds refuse during the deep night.
   world.beforeEvents.playerInteractWithBlock.subscribe((event) => {

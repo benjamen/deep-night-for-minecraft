@@ -66,13 +66,18 @@ export function seeingDistance(darkness, mode = "normal", night = NIGHT) {
 // you see to its edge, and the effect fades to nothing once you are well outside.
 export const lightRadius = (level) => (level <= 0 ? 0 : 1 + level * 0.65);
 
+// A light carried in hand opens the dark wider than the same light set down: it is held out, right beside the eyes. The
+// world's own light is a full-strength block (night.js); this is how much further its bearer sees through the night fog.
+export const HELD_LIGHT_STRETCH = 1.4;
+
 // The distance a player sees given the dark around them (`base`, from seeingDistance) and the lights near them:
 // [{ level, distance }], where `distance` is how far the light is from the player (0 for one held in hand). The
-// brightest light sets the range; a second one adds a quarter of its own. Returns at least `base`.
+// brightest light sets the range; a second one adds a quarter of its own. Returns at least `base`. A held light (distance
+// 0) reaches HELD_LIGHT_STRETCH further than the same light standing on the ground.
 export function visibleDistance(base, lights) {
   const reach = [];
   for (const { level, distance } of lights) {
-    const r = lightRadius(level);
+    const r = lightRadius(level) * (distance === 0 ? HELD_LIGHT_STRETCH : 1);
     if (r <= 0) continue;
     let seen = 0;
     if (distance <= r * 0.5) seen = r;

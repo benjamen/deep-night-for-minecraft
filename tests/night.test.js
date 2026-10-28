@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CUES, MODES, NIGHT, cueGap, darknessAt, easeDistance, lightRadius, nextCue, seeingDistance, visibleDistance } from "../BP/scripts/night-logic.js";
+import { CUES, HELD_LIGHT_STRETCH, MODES, NIGHT, cueGap, darknessAt, easeDistance, lightRadius, nextCue, seeingDistance, visibleDistance } from "../BP/scripts/night-logic.js";
 
 test("darkness follows the clock: none by day, a normal night first, pitch black after midnight, easing before dawn", () => {
   assert.equal(darknessAt(6000), 0, "noon");
@@ -58,10 +58,12 @@ test("lights open the dark by the light they give: a lantern more than a torch, 
   const held = (level) => visibleDistance(base, [{ level, distance: 0 }]);
   assert.equal(held(0), base, "a dead light adds nothing");
   assert.ok(held(15) > held(14) && held(14) > held(10) && held(10) > held(3), `${held(15)} ${held(14)} ${held(10)} ${held(3)}`);
-  assert.ok(held(14) > 9 && held(14) < 12, "a torch lights about ten blocks");
-  assert.ok(held(3) > base && held(3) < 4, "a single candle is a small circle, but a real one");
+  assert.ok(held(14) > 13 && held(14) < 15, "a torch held out sees about fourteen blocks into the dark");
+  assert.ok(held(3) > base && held(3) < 5, "a single candle is a small circle, but a real one");
   assert.ok(held(12) > 8 && held(12) < held(14), "four candles are nearly a torch");
-  assert.equal(held(15), lightRadius(15));
+  assert.equal(held(15), lightRadius(15) * HELD_LIGHT_STRETCH);
+  assert.ok(HELD_LIGHT_STRETCH > 1, "a carried light reaches further than one set down");
+  assert.ok(held(14) > visibleDistance(base, [{ level: 14, distance: 4 }]), "the same torch on the ground lights less of the dark");
 });
 
 test("a lamp lights a room around it: standing in its glow helps, well outside it does not", () => {

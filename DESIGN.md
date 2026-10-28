@@ -3,7 +3,8 @@
 ## What it does
 Night starts normal, deepens toward midnight, stays pitch black until about 3am, then eases off before dawn.
 Anything that gives light makes a pool of light, sized by how much light it gives (a candle small, a torch about ten
-blocks, a lantern a little more). Owls and the rest fill the quiet.
+blocks, a lantern a little more). A light carried in hand reaches further than the same light set down, and its invisible
+light block is full strength. Owls and the rest fill the quiet.
 
 ## How
 - `night-logic.js` (pure, tested): the darkness curve on the kit's 0 to 3 scale, moon and cloud adjustments, how far
@@ -26,7 +27,7 @@ blocks, a lantern a little more). Owls and the rest fill the quiet.
 Install both packs in a world with cheats on, then:
 - `/scriptevent dn:time 19000` then `/scriptevent dn:status`: darkness should read 3.00 and you should see about 2.5
   blocks. `/scriptevent dn:auto` goes back to the real clock.
-- Hold a torch, a lantern, then a candle: the circle should grow with the light. Put the torch down and walk away.
+- Hold a torch, a lantern, then a candle: the circle should grow with the light, and a carried light should reach further than the same one set down. Put the torch down and walk away.
 - Place a lamp, stand in its pool, step out: the glow should fade over a second or two.
 - `/scriptevent dn:mode gentle` and `pitch` change the pitch-black limit.
 - Whether the fog command stack behaves (one `kit_mix` entry per player; no flicker when the distance changes rung).
