@@ -143,6 +143,7 @@ function update() {
 }
 
 function sounds(player, darkness) {
+  if (world.getDynamicProperty("dn:sounds") === false) return; // dn:sounds off silences the generated night sounds
   const now = system.currentTick;
   const state = cues.get(player.id) ?? { at: now + 100, last: undefined };
   if (now < state.at) {
@@ -204,6 +205,9 @@ export function startNight() {
     } else if (id === "dn:mode") {
       world.setDynamicProperty(MODE_KEY, ["gentle", "normal", "pitch"].includes(m) ? m : "normal");
       say(`mode ${mode()}`);
+    } else if (id === "dn:sounds") {
+      world.setDynamicProperty("dn:sounds", m !== "off");
+      say(`the night sounds are ${m === "off" ? "off" : "on"}`);
     } else if (id === "dn:nosleep") {
       world.setDynamicProperty("dn:nosleep", m !== "off");
       say(`sleeping through the dark is ${m === "off" ? "allowed" : "blocked"}`);
